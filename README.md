@@ -15,7 +15,7 @@ based authentication for spring websocket, in this demo, we will use stateless t
 
 ## 认证方式1: 通过query url传token (not recommended)
 
-因为通过url传递token极不安全， 在此仅做参考。
+因为通过url传递token极不安全， 在此仅做参考, 相应代码在分支: https://github.com/uniquejava-demos/spring-websocket-stomp-token-auth-demo006/tree/pass-token-by-url 上。
 
 stomp.js前端:
 
@@ -53,6 +53,29 @@ http.oauth2ResourceServer(rs->{
 ## 认证方式2: 在CONNECT阶段通过Stomp header 传token (recommended)
 
 这种方式被spring官方文档推荐： https://docs.spring.io/spring-framework/docs/current/reference/html/web.html#websocket-stomp-authentication-token-based
+
+前端:
+
+```js
+const client = new Client({
+    brokerURL: `ws://localhost:8080/stomp`,
+    connectHeaders: {
+      "access_token": token
+    }
+})
+```
+
+后端:
+
+我们自己在InboundChannelInterceptor中处理用户登录， 所以我们需要设置ws的端点 `/stomp`为permitAll
+
+```java
+http
+    .authorizeHttpRequests((authorize) -> authorize
+    .antMatchers("/stomp").permitAll()
+```
+
+接下来，我们需要调用AuthenticationManager处理用户的Bearer Token.
 
 spring security 5.7 以后如何expose AuthenticationManager.
 
