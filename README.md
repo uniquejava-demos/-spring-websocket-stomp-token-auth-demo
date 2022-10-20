@@ -14,7 +14,9 @@ based authentication for spring websocket, in this demo, we will use stateless t
 1. 获得了免费的 `/logout` endpoint, 但是调用他并不会让jwt token失效，it's useless.
 2. 获得了免费的 BearerTokenAuthenticationFilter
 
-### 通过query url传token
+### 认证方式1: 通过query url传token (not recommended)
+
+因为通过url传递token极不安全， 在此仅做参考。
 
 stomp.js前端:
 
@@ -49,10 +51,23 @@ http.oauth2ResourceServer(rs->{
         })
 ```
 
+### 认证方式2: 在CONNECT阶段通过Stomp header 传token (recommended)
+
+这种方式被spring官方文档推荐： https://docs.spring.io/spring-framework/docs/current/reference/html/web.html#websocket-stomp-authentication-token-based
+
+## JWT token的缺点
+
 在这种情况下simpUser是一个JwtAuthenticationToken对象
 
-JwtAuthenticationToken auth = (JwtAuthenticationToken) headers.get("simpUser");
+```java
+if(StompCommand.CONNECT==accessor.getCommand()){
+        log.info("=============== CONNECT =============");
+        MessageHeaders headers=message.getHeaders();
+        JwtAuthenticationToken auth=(JwtAuthenticationToken)headers.get("simpUser");
+        }
+```
 
-他的缺点很明显， 无法revoke, 但是从[这里](BearerTokenAuthenticationFilter)我获得了一个灵感: 在logout success
-handler里更换server端的rsa key。
+他的缺点很明显
 
+1. 无法revoke, 但是从[这里](BearerTokenAuthenticationFilter)我获得了一个灵感: 在logout success
+   handler里更换server端的rsa key。
