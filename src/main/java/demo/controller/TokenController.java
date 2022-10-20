@@ -24,7 +24,7 @@ public class TokenController {
     JwtEncoder encoder;
 
     @PostMapping("/token")
-    public String token(Authentication authentication) {
+    public R token(Authentication authentication) {
         Instant now = Instant.now();
         long expiry = 36000L;
         // @formatter:off
@@ -39,7 +39,13 @@ public class TokenController {
                 .claim("scope", scope)
                 .build();
         // @formatter:on
-        return this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        return new R("success", "success", this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue());
     }
 
+}
+
+record R(String code, String message, Object data) {
+    public R(String code, String message) {
+        this(code, message, null);
+    }
 }

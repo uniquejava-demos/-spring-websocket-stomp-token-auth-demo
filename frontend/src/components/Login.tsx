@@ -1,34 +1,30 @@
 import {useEffect, useState} from 'react'
 import http from '../utils/http'
 
-function Login() {
-  const [authenticated, setAuthenticated] = useState(false)
+function Login({client, setClient, setConnected, authenticated, setAuthenticated}) {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    // 判断是否登录过了(XSRF-TOKEN)
-    // JSESSIONID是 HttpOnly cookie， 无法通过js读到，所以读csrf token。
     console.log('useEffect ..')
-    const cookieValue = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1]
-    if (cookieValue) {
-      console.log('XSRF-TOKEN: ' + cookieValue)
+    const token = sessionStorage.getItem("access_token");
+    if (token) {
+      console.log('token: ' + token)
       setAuthenticated(true)
     } else {
-      console.log(document.cookie)
+      console.log('unauthenticated')
     }
   }, [])
 
   async function onLogin() {
-    const params = new URLSearchParams()
-    params.append('username', 'cyper')
-    params.append('password', 'password')
-
-    const res = await http.post('http://localhost:8080/login', params)
+    const res = await http.post('http://localhost:8080/token', null, {
+      auth: {
+        username: 'cyper',
+        password: '123456'
+      },
+    })
     setAuthenticated(res.data.code === 'success')
     setMessage(res.data.message)
+    sessionStorage.setItem("access_token", res.data.data);
   }
 
   async function onWhoami() {
@@ -37,8 +33,15 @@ function Login() {
   }
 
   async function onLogout() {
-    await http.post('/logout')
+    await http.post('/logout?access_token' + sessionStorage.getItem("access_token"))
+    sessionStorage.clear();
     setAuthenticated(false)
+
+    await client.deactivate();
+
+    setClient(null)
+
+    setConnected(false)
   }
 
   return (

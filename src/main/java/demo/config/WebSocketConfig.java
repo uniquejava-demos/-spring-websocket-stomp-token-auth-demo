@@ -12,7 +12,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
-import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/stomp").setAllowedOrigins("*").setHandshakeHandler(new MyHandleShakeHandler());
+        registry.addEndpoint("/stomp").setAllowedOrigins("*").setHandshakeHandler(new MyHandshakeHandler());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     log.info("{} -> {}", h, headers.get(h));
                 });
 
-                BearerTokenAuthentication auth = (BearerTokenAuthentication) headers.get("simpUser");
+                JwtAuthenticationToken auth = (JwtAuthenticationToken) headers.get("simpUser");
                 log.info("auth.name: {}", auth.getName());
             }
 
@@ -97,7 +97,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         }
     }
 
-    private class MyHandleShakeHandler extends DefaultHandshakeHandler {
+    private class MyHandshakeHandler extends DefaultHandshakeHandler {
         @Override
         protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
             log.info("============== MyHandleShakeHandler =============");

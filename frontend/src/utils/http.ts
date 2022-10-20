@@ -11,7 +11,6 @@ console.log('apiUrl=', apiUrl)
 
 axios.interceptors.request.use(
     (config) => {
-      config.withCredentials = true
       return config
     },
     (err) => {
