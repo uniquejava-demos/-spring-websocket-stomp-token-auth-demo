@@ -9,10 +9,10 @@ function App() {
   const [messageInput, setMessageInput] = useState<string>('')
 
   function onConnect() {
-    if (client === null) {
-      const token = sessionStorage.getItem("access_token");
+    const token = sessionStorage.getItem("access_token");
+    if (client === null && token !== null) {
       const client = new Client({
-        brokerURL: `ws://localhost:8080/stomp?access_token=${token}`,
+        brokerURL: `ws://localhost:8080/stomp`,
 
         // https://docs.spring.io/spring-framework/docs/4.3.x/spring-framework-reference/html/websocket.html#websocket-stomp-handle-broker-relay-configure
         // The STOMP broker relay always sets the login and passcode headers on every CONNECT frame that it forwards to the broker on behalf of clients.
@@ -20,6 +20,7 @@ function App() {
         connectHeaders: {
           // login: 'user',
           // passcode: 'password',
+          "access_token": token
         },
         debug: function (str) {
           console.log(str)

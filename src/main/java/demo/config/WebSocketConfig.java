@@ -12,6 +12,8 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -26,6 +28,10 @@ import java.util.Map;
 @EnableWebSocketMessageBroker
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    public WebSocketConfig(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/stomp").setAllowedOrigins("*").setHandshakeHandler(new MyHandshakeHandler());
@@ -50,6 +56,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(new MyOutboundChannelInterceptor());
     }
 
+    private final AuthenticationManager authenticationManager;
+
     private class MyInboundChannelInterceptor implements ChannelInterceptor {
         @Override
         public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -61,16 +69,24 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
             log.info("accessor.user: {}", accessor.getUser());
 
-            if (StompCommand.CONNECT == accessor.getCommand()) {
-                log.info("=============== CONNECT =============");
-                MessageHeaders headers = message.getHeaders();
-                headers.forEach((h, index) -> {
-                    log.info("{} -> {}", h, headers.get(h));
-                });
+if (StompCommand.CONNECT == accessor.getCommand()) {
+    log.info("=============== CONNECT =============");
+    MessageHeaders headers = message.getHeaders();
+    headers.forEach((h, index) -> {
+        log.info("{} -> {}", h, headers.get(h));
+    });
 
-                JwtAuthenticationToken auth = (JwtAuthenticationToken) headers.get("simpUser");
-                log.info("auth.name: {}", auth.getName());
-            }
+    // JwtAuthenticationToken auth = (JwtAuthenticationToken) headers.get("simpUser");
+    // log.info("auth.name: {}", auth.getName());
+    String token = accessor.getFirstNativeHeader("access_token");
+    log.info("token: {}", token);
+
+    JwtAuthenticationToken user =  (JwtAuthenticationToken) authenticationManager.authenticate(new BearerTokenAuthenticationToken(token));
+    log.info("simpUser: {}", user);
+    log.info("name: {}", user.getName());
+    log.info("token.subject: {}", user.getToken().getSubject());
+    accessor.setUser(user);
+}
 
             if (StompCommand.SEND == accessor.getCommand()) {
                 log.info("=============== SEND =============");
